@@ -10,11 +10,10 @@ import (
 func parseCommand(buf []byte, cnt int) (command string, args []string, err error) {
 	rawStrings := strings.Split(strings.TrimSpace(string(buf[0:cnt])), "\r\n")
 	argLen := (len(rawStrings) - 3) / 2
-	fmt.Printf("%d: %v\n", argLen, rawStrings)
 	for i := 0; i < argLen; i++ {
 		args = append(args, rawStrings[i*2+4])
 	}
-	return rawStrings[2], args, nil
+	return strings.ToUpper(rawStrings[2]), args, nil
 }
 
 func reformatResponse(resp string, err error) string {
@@ -25,6 +24,7 @@ func reformatResponse(resp string, err error) string {
 }
 
 func connHandler(conn net.Conn) {
+	println("New Conn Start")
 	if conn == nil {
 		println("empty Conn")
 		return
@@ -33,25 +33,27 @@ func connHandler(conn net.Conn) {
 	for {
 		cnt, err := conn.Read(buf)
 		if err != nil || cnt == 0 {
+			println("Conn closed by client")
 			conn.Close()
 			break
 		}
-		commandStr, args, err := parseCommand(buf, cnt)
+		upperCommand, args, err := parseCommand(buf, cnt)
 		if err != nil {
 			println("Parse Args Error")
 			return
 		}
-		fmt.Printf("Command %s, Args %v\n", commandStr, args)
+		fmt.Printf("Command %s, Args %v\n", upperCommand, args)
 
 		var result string
-		switch strings.ToUpper(commandStr) {
+		switch upperCommand {
 		case "PING":
-			result, err = command.Ping(commandStr, args)
+			result, err = command.Ping(upperCommand, args)
 		case "ECHO":
-			result, err = command.Echo(commandStr, args)
+			result, err = command.Echo(upperCommand, args)
 		default:
-			result, err = command.Default(commandStr, args)
+			result, err = command.Default(upperCommand, args)
 		}
+
 		conn.Write([]byte(reformatResponse(result, err)))
 	}
 }
