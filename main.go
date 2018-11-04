@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"net"
-	commandFunc "redigo/command"
+	"redigo/command"
 	"strings"
 )
 
@@ -36,21 +36,21 @@ func connHandler(conn net.Conn) {
 			conn.Close()
 			break
 		}
-		command, args, err := parseCommand(buf, cnt)
+		commandStr, args, err := parseCommand(buf, cnt)
 		if err != nil {
 			println("Parse Args Error")
 			return
 		}
-		fmt.Printf("Command %s, Args %v\n", command, args)
+		fmt.Printf("Command %s, Args %v\n", commandStr, args)
 
 		var result string
-		switch strings.ToUpper(command) {
+		switch strings.ToUpper(commandStr) {
 		case "PING":
-			result, err = commandFunc.Ping(command, args)
+			result, err = command.Ping(commandStr, args)
 		case "ECHO":
-			result, err = commandFunc.Echo(command, args)
+			result, err = command.Echo(commandStr, args)
 		default:
-			result, err = commandFunc.Default(command, args)
+			result, err = command.Default(commandStr, args)
 		}
 		conn.Write([]byte(reformatResponse(result, err)))
 	}
