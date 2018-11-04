@@ -17,7 +17,10 @@ func parseCommand(buf []byte, cnt int) (command string, args []string, err error
 	return rawStrings[2], args, nil
 }
 
-func reformatResponse(resp string) string {
+func reformatResponse(resp string, err error) string {
+	if err != nil {
+		return fmt.Sprintf("-ERR %s\r\n", resp)
+	}
 	return fmt.Sprintf("$%d\r\n%s\r\n", len(resp), resp)
 }
 
@@ -43,13 +46,13 @@ func connHandler(conn net.Conn) {
 		var result string
 		switch strings.ToUpper(command) {
 		case "PING":
-			result = commandFunc.Ping(command, args)
+			result, err = commandFunc.Ping(command, args)
 		case "ECHO":
-			result = commandFunc.Echo(command, args)
+			result, err = commandFunc.Echo(command, args)
 		default:
-			result = commandFunc.Default(command, args)
+			result, err = commandFunc.Default(command, args)
 		}
-		conn.Write([]byte(reformatResponse(result)))
+		conn.Write([]byte(reformatResponse(result, err)))
 	}
 }
 
