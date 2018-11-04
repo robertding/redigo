@@ -50,6 +50,10 @@ func connHandler(conn net.Conn) {
 			result, err = command.Ping(upperCommand, args)
 		case "ECHO":
 			result, err = command.Echo(upperCommand, args)
+		case "GET":
+			result, err = command.Get(upperCommand, args)
+		case "SET":
+			result, err = command.Set(upperCommand, args)
 		default:
 			result, err = command.Default(upperCommand, args)
 		}
