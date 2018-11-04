@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net"
+	commandFunc "redigo/command"
 	"strings"
 )
 
@@ -16,6 +17,10 @@ func parseCommand(buf []byte, cnt int) (command string, args []string, err error
 	return rawStrings[2], args, nil
 }
 
+func reformatResponse(resp string) string {
+	return fmt.Sprintf("$%d\r\n%s\r\n", len(resp), resp)
+}
+
 func connHandler(conn net.Conn) {
 	if conn == nil {
 		println("empty Conn")
@@ -24,7 +29,6 @@ func connHandler(conn net.Conn) {
 	buf := make([]byte, 4096)
 	for {
 		cnt, err := conn.Read(buf)
-		println("read")
 		if err != nil || cnt == 0 {
 			conn.Close()
 			break
@@ -35,7 +39,17 @@ func connHandler(conn net.Conn) {
 			return
 		}
 		fmt.Printf("Command %s, Args %v\n", command, args)
-		conn.Write([]byte("$15\r\nHELLO Im Redigo\r\n"))
+
+		var result string
+		switch strings.ToUpper(command) {
+		case "PING":
+			result = commandFunc.Ping(command, args)
+		case "ECHO":
+			result = commandFunc.Echo(command, args)
+		default:
+			result = commandFunc.Default(command, args)
+		}
+		conn.Write([]byte(reformatResponse(result)))
 	}
 }
 
